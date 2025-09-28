@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Tutor & AI Search</title>
+    <!-- Custom CSS for aesthetics -->
+    <style>
+        :root {
+            --primary-color: #1f2937;
+            --primary-dark: #111827;
+            --secondary-color: #ffffff;
+            --accent-color: #059669;
+            --text-color: #111827;
+            --text-light: #374151;
+            --border-color: #d1d5db;
+            --border-dark: #9ca3af;
+            --error-color: #dc2626;
+            --success-color: #059669;
+            --background-light: #f9fafb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 50%, #e5e7eb 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--text-color);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--secondary-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+            border-color: var(--border-dark);
+        }
+
+        .card h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-upload input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 20px;
+            border: 2px dashed var(--border-dark);
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: var(--background-light);
+            color: var(--text-light);
+        }
+
+        .file-upload-label:hover {
+            border-color: var(--primary-color);
+            background: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .file-upload-label.dragover {
+            border-color: var(--primary-color);
+            background: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .upload-btn, .reset-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            transition: background-color 0.3s ease;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .upload-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .reset-btn {
+            background: var(--error-color);
+            margin-left: 10px;
+            width: 100%;
+        }
+
+        .reset-btn:hover {
+            background: #dc2626;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .info-panel {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .info-panel h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            padding: 20px;
+            background: var(--secondary-color);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .feature-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        /* Style for the search input trigger */
+        #searchWidgetTrigger {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            background: var(--background-light);
+            color: var(--text-color);
+            margin-top: 30px;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: border-color 0.3s ease;
+        }
+
+        #searchWidgetTrigger:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>AI Document Platform</h1>
+            <p>Upload documents and query your custom knowledge base instantly.</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Card: Document Management and Upload -->
+            <div class="card">
+                <h2>Document Management</h2>
+
+                <div class="upload-section">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="file-upload">
+                            <input type="file" id="fileInput" accept=".pdf" required>
+                            <label for="fileInput" class="file-upload-label" id="fileLabel">
+                                <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+                                <strong>Click to upload PDF documents</strong>
+                                <br>
+                                <small>or drag and drop files here</small>
+                            </label>
+                        </div>
+                        <button type="submit" class="upload-btn">
+                            Upload Document
+                        </button>
+                    </form>
+
+                    <div style="margin-top: 20px;">
+                        <button id="resetBtn" class="reset-btn" onclick="resetDatastore()">
+                            Reset Knowledge Base
+                        </button>
+                    </div>
+                </div>
+
+                <div id="uploadStatus"></div>
+
+                <div class="info-panel" style="margin-top: 20px; padding: 20px;">
+                    <h4>📊 System Status</h4>
+                    <p><strong>Data Store ID:</strong> <code>document-data_1759014897974</code></p>
+                    <p><strong>Supported formats:</strong> PDF documents</p>
+                    <p><strong>Storage:</strong> Google Cloud Storage</p>
+                </div>
+            </div>
+
+            <!-- Right Card: AI Search Widget Host -->
+            <div class="card">
+                <h2>Knowledge Base Search</h2>
+
+                <div style="text-align: center; padding: 20px 0;">
+                    <p style="margin-bottom: 20px; color: var(--text-light);">
+                        Use the search bar below to query the documents you have uploaded (via the left panel) or access generic AI search capabilities.
+                    </p>
+                    <p style="font-weight: bold; color: var(--primary-color);">
+                        Click the search bar to launch the AI Search Widget.
+                    </p>
+                </div>
+
+                <!-- AI SEARCH WIDGET TRIGGER -->
+                <input placeholder="Search your knowledge base..." id="searchWidgetTrigger" readonly />
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>🚀 Platform Features</h3>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <h4>📚 Document Upload</h4>
+                    <p>Upload PDF textbooks and course materials to build your knowledge base</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔍 Smart Retrieval</h4>
+                    <p>Search and query your indexed documents instantly.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>💬 Conversational AI</h4>
+                    <p>Get generative answers from your documents using the AI widget.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>⚡ Real-time Indexing</h4>
+                    <p>Documents are uploaded to GCS and imported to your Data Store.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIDGET SCRIPT BUNDLE (REQUIRED) -->
+    <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"></script>
+
+    <!-- WIDGET ELEMENT (REQUIRED) -->
+    <gen-search-widget
+        configId="e2476b93-5638-45df-881a-5c93d471e7a5"
+        location="us"
+        triggerId="searchWidgetTrigger">
+    </gen-search-widget>
+
+    <script>
+        // ------------------------------------------------------------------------------------------------
+        // 1. FILE UPLOAD LOGIC
+        // ------------------------------------------------------------------------------------------------
+
+        const fileInput = document.getElementById('fileInput');
+        const fileLabel = document.getElementById('fileLabel');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // Drag and drop event handlers
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, () => fileLabel.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileLabel.addEventListener(eventName, () => fileLabel.classList.remove('dragover'), false);
+        });
+
+        fileLabel.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileLabel(files[0]);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                updateFileLabel(e.target.files[0]);
+            }
+        });
+
+        function updateFileLabel(file) {
+            if (file) {
+                fileLabel.innerHTML = `
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+                    <strong>${file.name}</strong>
+                    <br>
+                    <small>Ready to upload (${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
+                `;
+            }
+        }
+
+        // Upload form submission (Interacts with /upload Flask endpoint)
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showStatus('Please select a file to upload.', 'error');
+                return;
+            }
+
+            formData.append('textbook_file', file);
+
+            showStatus('Uploading document...', 'info');
+
+            try {
+                // NOTE: This fetch call relies on your Flask server being accessible on the same domain/port
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showStatus(result.message, 'success');
+                    resetFileInput();
+                } else {
+                    showStatus(result.message, 'error');
+                }
+            } catch (error) {
+                showStatus('Upload failed. Check your Flask server and API keys.', 'error');
+                console.error('Upload Error:', error);
+            }
+        });
+
+        function resetFileInput() {
+            fileInput.value = '';
+            fileLabel.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+                <strong>Click to upload PDF documents</strong>
+                <br>
+                <small>or drag and drop files here</small>
+            `;
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+
+            if (type === 'success') {
+                // Clear success message after 5 seconds
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+
+        // Reset datastore functionality (Interacts with /reset Flask endpoint)
+        async function resetDatastore() {
+            // Using a custom confirmation modal is recommended over window.confirm()
+            if (window.confirm('Are you sure you want to reset the knowledge base? This will remove all uploaded documents.')) {
+                showStatus('Resetting knowledge base...', 'info');
+
+                try {
+                    const response = await fetch('/reset', {
+                        method: 'POST'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        showStatus(result.message, 'success');
+                    } else {
+                        showStatus(result.message, 'error');
+                    }
+                } catch (error) {
+                    showStatus('Reset failed. Check your Flask server connection.', 'error');
+                    console.error('Reset Error:', error);
+                }
+            }
+        }
+
+        // ------------------------------------------------------------------------------------------------
+        // 2. INITIALIZATION
+        // ------------------------------------------------------------------------------------------------
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Re-assign functions to the global scope to ensure they are accessible from HTML attributes
+            window.resetDatastore = resetDatastore;
+
+            // Log confirmation that the widget script is loaded
+            const widgetScript = document.querySelector('script[src*="gen-app-builder/client"]');
+            if (widgetScript) {
+                console.log('AI Search Widget script loaded successfully.');
+            } else {
+                console.error('AI Search Widget script is missing!');
+            }
+        });
+    </script>
+</body>
+</html>
